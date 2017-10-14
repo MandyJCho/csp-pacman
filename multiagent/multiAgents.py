@@ -38,6 +38,9 @@ class ReflexAgent(Agent):
         Just like in the previous project, getAction takes a GameState and returns
         some Directions.X for some X in the set {North, South, West, East, Stop}
         """
+        # debugging
+        print "NEW ROLL:"
+
         # Collect legal moves and successor states
         legalMoves = gameState.getLegalActions()
 
@@ -46,6 +49,8 @@ class ReflexAgent(Agent):
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
+
+        print "************************\n\n"
 
         "Add more of your code here if you want to"
 
@@ -73,7 +78,28 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
+        # debugging
+        print "newPos ", newPos
+        print "newFood\n", newFood, newFood.__class__.__name__
+        print "ghost states: "
+        for p in newGhostStates:
+            print "\t", p
+        print "nst: ", newScaredTimes
+        print "\n"
+
+        """
+        idea:
+        we use position to find value of successor states from the food map
+        we could use manhattan distances of the foods
+        how do we consistently generate max values from lower values
+        a spot next to a ghost should have negative infinity
+        spots near food should have higher values
+        we could use the board size / by the value we get to discern higher values
+        """
+
         "*** YOUR CODE HERE ***"
+
+
         return successorGameState.getScore()
 
 def scoreEvaluationFunction(currentGameState):
