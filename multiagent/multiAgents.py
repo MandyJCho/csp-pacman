@@ -10,7 +10,7 @@
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
-
+import sys
 
 from util import manhattanDistance
 from game import Directions
@@ -19,88 +19,54 @@ import random, util
 from game import Agent
 
 class ReflexAgent(Agent):
-    """
-      A reflex agent chooses an action at each choice point by examining
-      its alternatives via a state evaluation function.
-
-      The code below is provided as a guide.  You are welcome to change
-      it in any way you see fit, so long as you don't touch our method
-      headers.
-    """
-
-
     def getAction(self, gameState):
-        """
-        You do not need to change this method, but you're welcome to.
-
-        getAction chooses among the best options according to the evaluation function.
-
-        Just like in the previous project, getAction takes a GameState and returns
-        some Directions.X for some X in the set {North, South, West, East, Stop}
-        """
-        # debugging
-        print "NEW ROLL:"
-
         # Collect legal moves and successor states
         legalMoves = gameState.getLegalActions()
-
         # Choose one of the best actions
-        scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
+        scores = [self.evaluationFunction(gameState, action, gameState.getFood()) for action in legalMoves]
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
 
-        print "************************\n\n"
-
-        "Add more of your code here if you want to"
-
         return legalMoves[chosenIndex]
 
-    def evaluationFunction(self, currentGameState, action):
-        """
-        Design a better evaluation function here.
-
-        The evaluation function takes in the current and proposed successor
-        GameStates (pacman.py) and returns a number, where higher numbers are better.
-
-        The code below extracts some useful information from the state, like the
-        remaining food (newFood) and Pacman position after moving (newPos).
-        newScaredTimes holds the number of moves that each ghost will remain
-        scared because of Pacman having eaten a power pellet.
-
-        Print out these variables to see what you're getting, then combine them
-        to create a masterful evaluation function.
-        """
+    def evaluationFunction(self, currentGameState, action, newFood):
         # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         newPos = successorGameState.getPacmanPosition()
-        newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+        badGhosts = dict()
 
-        # debugging
-        print "newPos ", newPos
-        print "newFood\n", newFood, newFood.__class__.__name__
-        print "ghost states: "
-        for p in newGhostStates:
-            print "\t", p
-        print "nst: ", newScaredTimes
-        print "\n"
+        # get the food coordinates
+        foodCoords = []
+        for xInd, x in enumerate(newFood):
+            for yInd, y in enumerate(x):
+                if newFood[xInd][yInd]:
+                    foodCoords.append((xInd, yInd))
+        min = sys.maxsize
 
-        """
-        idea:
-        we use position to find value of successor states from the food map
-        we could use manhattan distances of the foods
-        how do we consistently generate max values from lower values
-        a spot next to a ghost should have negative infinity
-        spots near food should have higher values
-        we could use the board size / by the value we get to discern higher values
-        """
+        # compute values for the successor
+        for food in foodCoords:
+            manDis = manhattanDistance(newPos, food)
+            if manDis < min:
+                min = manDis
 
-        "*** YOUR CODE HERE ***"
+        if min is 0: min = 1
 
+        # get dangerous ghosts
+        for ind, ghost in enumerate(newGhostStates):
+            if newScaredTimes[ind] is 0:
+                badGhosts[ghost] = newScaredTimes[ind]
 
-        return successorGameState.getScore()
+        # add a multiplier if the spot is dangerous
+        for ghost in newGhostStates:
+            ghostPos = ghost.getPosition()
+            if (abs(newPos[0] - ghostPos[0]) + abs(newPos[1] - ghostPos[1])) < 2 and badGhosts.has_key(ghost):
+                min *= -1
+
+        return float(sys.maxsize) / min
+
 
 def scoreEvaluationFunction(currentGameState):
     """
