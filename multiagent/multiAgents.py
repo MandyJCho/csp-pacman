@@ -37,13 +37,7 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
         badGhosts = dict()
-
-        # get the food coordinates
-        foodCoords = []
-        for xInd, x in enumerate(newFood):
-            for yInd, y in enumerate(x):
-                if newFood[xInd][yInd]:
-                    foodCoords.append((xInd, yInd))
+        foodCoords = currentGameState.getFood().asList()
         min = sys.maxsize
 
         # compute values for the successor
@@ -65,6 +59,7 @@ class ReflexAgent(Agent):
             # the coord should only differ by 1 if the ghost is too close
             if (abs(newPos[0] - ghostPos[0]) + abs(newPos[1] - ghostPos[1])) < 2 and badGhosts.has_key(ghost):
                 min *= -1
+                break
 
         return float(sys.maxsize) / min
 
@@ -232,15 +227,45 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
         return action
 
+
+def ManhDistCmp(pos, p1, p2):
+    """
+      This is a comparator for sorting list of positions respected
+      to pacman's position.
+    """
+    diff = manhattanDistance(pos, p1) - manhattanDistance(pos, p2)
+
+    if diff < 0:
+        return -1
+    elif diff > 0:
+        return 1
+    else:
+        return 0
+
+
 def betterEvaluationFunction(currentGameState):
     """
-      Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
-      evaluation function (question 5).
-
-      DESCRIPTION: <write something here so we know what you did>
+      DESCRIPTION:
+        read comments please :)
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    pacPos = currentGameState.getPacmanPosition()
+    foodList = currentGameState.getFood().asList()
+
+    # just like quicksort, there is a higher probability of finding an effective index
+    # by selecting a random element in the array
+    food = len(foodList)
+    if food > 0: # not sure why, but the foodList can be empty
+        index = random.randint(0, food - 1)
+        # we divide by 1.0 to counteract any parts of ghost
+        # we don't divide ghost by food since food can return 0
+        food = 1.0 / manhattanDistance(pacPos, foodList[index])
+
+    # get the manhattan distance of the closest threat
+    # I noticed that when taking into account scared states, the values were lower
+    # as it is always safer to avoid the ghost
+    ghost = min([manhattanDistance(pacPos, g.getPosition()) for g in currentGameState.getGhostStates()])
+
+    return currentGameState.getScore() + ghost * food
 
 # Abbreviation
 better = betterEvaluationFunction
