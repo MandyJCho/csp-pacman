@@ -193,19 +193,44 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
-    """
-      Your expectimax agent (question 4)
-    """
+    def getExpectimax(self, gameState, agentInd, depth):
+        # evaluate state when max depth reached or end of game
+        if depth is 0 or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        # get next game states
+        nextStates = [gameState.generateSuccessor(agentInd, action)
+                      for action in gameState.getLegalActions(agentInd)]
+
+        nextInd = (agentInd + 1) % gameState.getNumAgents()
+        values = [self.getExpectimax(state, nextInd, depth - 1 ) for state in nextStates]
+
+        # get max for pacman
+        if agentInd is 0:
+            return max(values)
+
+        return float(reduce(lambda x, y: x + y, values)) / len(values)
 
     def getAction(self, gameState):
-        """
-          Returns the expectimax action using self.depth and self.evaluationFunction
+        # get initial actions
+        actions = gameState.getLegalActions(0)
+        nextStates = [gameState.generateSuccessor(0, action) for action in actions]
 
-          All ghosts should be modeled as choosing uniformly at random from their
-          legal moves.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # get max values for each action
+        depth = self.depth * gameState.getNumAgents() - 1
+        a = -sys.maxsize
+        b = sys.maxsize
+        values = [self.getExpectimax(state, 1, depth) for state in nextStates]
+
+        # get max action
+        action = actions[0]
+        max = -sys.maxsize
+        for i in range(0, len(values)):
+            if values[i] > max:
+                max = values[i]
+                action = actions[i]
+
+        return action
 
 def betterEvaluationFunction(currentGameState):
     """
